@@ -1,0 +1,171 @@
+version: '3'
+
+services:
+
+  #  Petclinic
+  config-server:
+    image: inspectit/spring-petclinic-config-server:${INSPECTIT_PETCLINIC_VERSION}
+    container_name: config-server
+    hostname: config-server
+    environment:
+      - APPDYNAMICS_AGENT_APPLICATION_NAME=${APPDYNAMICS_AGENT_APPLICATION_NAME}
+#      - APPDYNAMICS_AGENT_TIER_NAME=${APPDYNAMICS_AGENT_TIER_NAME}
+      - APPDYNAMICS_AGENT_TIER_NAME=config-server
+      - APPDYNAMICS_AGENT_NODE_NAME=config-server-1
+      - APPDYNAMICS_AGENT_ACCOUNT_NAME=${APPDYNAMICS_AGENT_ACCOUNT_NAME}
+      - APPDYNAMICS_AGENT_ACCOUNT_ACCESS_KEY=${APPDYNAMICS_AGENT_ACCOUNT_ACCESS_KEY}
+      - APPDYNAMICS_CONTROLLER_HOST_NAME=${APPDYNAMICS_CONTROLLER_HOST_NAME}
+      - APPDYNAMICS_CONTROLLER_PORT=${APPDYNAMICS_CONTROLLER_PORT}
+      - APPDYNAMICS_CONTROLLER_SSL_ENABLED=${APPDYNAMICS_CONTROLLER_SSL_ENABLED}
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+#    depends_on:
+    entrypoint: ["./dockerize", "java", "-javaagent:/opt/appdynamics/javaagent.jar", "org.springframework.boot.loader.JarLauncher"]
+    volumes:
+      - ../downloads/AppServerAgent:/opt/appdynamics
+    ports:
+     - 8888:8888
+
+  discovery-server:
+    image: inspectit/spring-petclinic-discovery-server:${INSPECTIT_PETCLINIC_VERSION}
+    container_name: discovery-server
+    hostname: discovery-server
+    environment:
+      - APPDYNAMICS_AGENT_APPLICATION_NAME=${APPDYNAMICS_AGENT_APPLICATION_NAME}
+#      - APPDYNAMICS_AGENT_TIER_NAME=${APPDYNAMICS_AGENT_TIER_NAME}
+      - APPDYNAMICS_AGENT_TIER_NAME=discovery-server
+      - APPDYNAMICS_AGENT_NODE_NAME=discovery-server-1
+      - APPDYNAMICS_AGENT_ACCOUNT_NAME=${APPDYNAMICS_AGENT_ACCOUNT_NAME}
+      - APPDYNAMICS_AGENT_ACCOUNT_ACCESS_KEY=${APPDYNAMICS_AGENT_ACCOUNT_ACCESS_KEY}
+      - APPDYNAMICS_CONTROLLER_HOST_NAME=${APPDYNAMICS_CONTROLLER_HOST_NAME}
+      - APPDYNAMICS_CONTROLLER_PORT=${APPDYNAMICS_CONTROLLER_PORT}
+      - APPDYNAMICS_CONTROLLER_SSL_ENABLED=${APPDYNAMICS_CONTROLLER_SSL_ENABLED}
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    depends_on:
+      - config-server
+    entrypoint: ["./dockerize","-wait=tcp://config-server:8888","-timeout=120s","--", "java", "-javaagent:/opt/appdynamics/javaagent.jar", "org.springframework.boot.loader.JarLauncher"]
+    volumes:
+      - ../downloads/AppServerAgent:/opt/appdynamics
+    ports:
+     - 8761:8761
+
+  customers-service:
+    image: inspectit/spring-petclinic-customers-service:${INSPECTIT_PETCLINIC_VERSION}
+    container_name: customers-service
+    hostname: customers-service
+    environment:
+      - APPDYNAMICS_AGENT_APPLICATION_NAME=${APPDYNAMICS_AGENT_APPLICATION_NAME}
+#      - APPDYNAMICS_AGENT_TIER_NAME=${APPDYNAMICS_AGENT_TIER_NAME}
+      - APPDYNAMICS_AGENT_TIER_NAME=customers-service
+      - APPDYNAMICS_AGENT_NODE_NAME=customers-service-1
+      - APPDYNAMICS_AGENT_ACCOUNT_NAME=${APPDYNAMICS_AGENT_ACCOUNT_NAME}
+      - APPDYNAMICS_AGENT_ACCOUNT_ACCESS_KEY=${APPDYNAMICS_AGENT_ACCOUNT_ACCESS_KEY}
+      - APPDYNAMICS_CONTROLLER_HOST_NAME=${APPDYNAMICS_CONTROLLER_HOST_NAME}
+      - APPDYNAMICS_CONTROLLER_PORT=${APPDYNAMICS_CONTROLLER_PORT}
+      - APPDYNAMICS_CONTROLLER_SSL_ENABLED=${APPDYNAMICS_CONTROLLER_SSL_ENABLED}
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    depends_on:
+      - config-server
+      - discovery-server
+    entrypoint: ["./dockerize","-wait=tcp://discovery-server:8761","-timeout=120s","--","java", "-javaagent:/opt/appdynamics/javaagent.jar", "org.springframework.boot.loader.JarLauncher"]
+    volumes:
+      - ../downloads/AppServerAgent:/opt/appdynamics
+    ports:
+      - 8081:8081
+
+  visits-service:
+    image: inspectit/spring-petclinic-visits-service:${INSPECTIT_PETCLINIC_VERSION}
+    container_name: visits-service
+    hostname: visits-service
+    environment:
+      - APPDYNAMICS_AGENT_APPLICATION_NAME=${APPDYNAMICS_AGENT_APPLICATION_NAME}
+#      - APPDYNAMICS_AGENT_TIER_NAME=${APPDYNAMICS_AGENT_TIER_NAME}
+      - APPDYNAMICS_AGENT_TIER_NAME=visits-service
+      - APPDYNAMICS_AGENT_NODE_NAME=visits-service-1
+      - APPDYNAMICS_AGENT_ACCOUNT_NAME=${APPDYNAMICS_AGENT_ACCOUNT_NAME}
+      - APPDYNAMICS_AGENT_ACCOUNT_ACCESS_KEY=${APPDYNAMICS_AGENT_ACCOUNT_ACCESS_KEY}
+      - APPDYNAMICS_CONTROLLER_HOST_NAME=${APPDYNAMICS_CONTROLLER_HOST_NAME}
+      - APPDYNAMICS_CONTROLLER_PORT=${APPDYNAMICS_CONTROLLER_PORT}
+      - APPDYNAMICS_CONTROLLER_SSL_ENABLED=${APPDYNAMICS_CONTROLLER_SSL_ENABLED}
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    depends_on:
+     - config-server
+     - discovery-server
+    entrypoint: ["./dockerize","-wait=tcp://discovery-server:8761","-timeout=120s","--","java", "-javaagent:/opt/appdynamics/javaagent.jar",  "org.springframework.boot.loader.JarLauncher"]
+    volumes:
+      - ../downloads/AppServerAgent:/opt/appdynamics
+    ports:
+     - 8082:8082
+
+  vets-service:
+    image: inspectit/spring-petclinic-vets-service:${INSPECTIT_PETCLINIC_VERSION}
+    container_name: vets-service
+    hostname: vets-service
+    environment:
+      - APPDYNAMICS_AGENT_APPLICATION_NAME=${APPDYNAMICS_AGENT_APPLICATION_NAME}
+#      - APPDYNAMICS_AGENT_TIER_NAME=${APPDYNAMICS_AGENT_TIER_NAME}
+      - APPDYNAMICS_AGENT_TIER_NAME=vets-service
+      - APPDYNAMICS_AGENT_NODE_NAME=vets-service-1
+      - APPDYNAMICS_AGENT_ACCOUNT_NAME=${APPDYNAMICS_AGENT_ACCOUNT_NAME}
+      - APPDYNAMICS_AGENT_ACCOUNT_ACCESS_KEY=${APPDYNAMICS_AGENT_ACCOUNT_ACCESS_KEY}
+      - APPDYNAMICS_CONTROLLER_HOST_NAME=${APPDYNAMICS_CONTROLLER_HOST_NAME}
+      - APPDYNAMICS_CONTROLLER_PORT=${APPDYNAMICS_CONTROLLER_PORT}
+      - APPDYNAMICS_CONTROLLER_SSL_ENABLED=${APPDYNAMICS_CONTROLLER_SSL_ENABLED}
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    depends_on:
+     - config-server
+     - discovery-server
+    entrypoint: ["./dockerize","-wait=tcp://discovery-server:8761","-timeout=120s","--","java", "-javaagent:/opt/appdynamics/javaagent.jar", "org.springframework.boot.loader.JarLauncher"]
+    volumes:
+      - ../downloads/AppServerAgent:/opt/appdynamics
+    ports:
+     - 8083:8083
+
+  api-gateway:
+    image: inspectit/spring-petclinic-api-gateway:${INSPECTIT_PETCLINIC_VERSION}
+    container_name: api-gateway
+    hostname: api-gateway
+    environment:
+      - APPDYNAMICS_AGENT_APPLICATION_NAME=${APPDYNAMICS_AGENT_APPLICATION_NAME}
+#      - APPDYNAMICS_AGENT_TIER_NAME=${APPDYNAMICS_AGENT_TIER_NAME}
+      - APPDYNAMICS_AGENT_TIER_NAME=api-gateway
+      - APPDYNAMICS_AGENT_NODE_NAME=api-gateway-1
+      - APPDYNAMICS_AGENT_ACCOUNT_NAME=${APPDYNAMICS_AGENT_ACCOUNT_NAME}
+      - APPDYNAMICS_AGENT_ACCOUNT_ACCESS_KEY=${APPDYNAMICS_AGENT_ACCOUNT_ACCESS_KEY}
+      - APPDYNAMICS_CONTROLLER_HOST_NAME=${APPDYNAMICS_CONTROLLER_HOST_NAME}
+      - APPDYNAMICS_CONTROLLER_PORT=${APPDYNAMICS_CONTROLLER_PORT}
+      - APPDYNAMICS_CONTROLLER_SSL_ENABLED=${APPDYNAMICS_CONTROLLER_SSL_ENABLED}
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    depends_on:
+      - config-server
+      - discovery-server
+    entrypoint: ["./dockerize","-wait=tcp://discovery-server:8761","-timeout=120s","--","java", "-javaagent:/opt/appdynamics/javaagent.jar", "org.springframework.boot.loader.JarLauncher"]
+    volumes:
+      - ../downloads/AppServerAgent:/opt/appdynamics
+    ports:
+     - 8080:8080
+
+  #  Load Generator
+  ## Artificial load on Demo
+  load:
+    image: inspectit/spring-petclinic-load:1.0
+    container_name: load-generator
+    hostname: load-generator
+
